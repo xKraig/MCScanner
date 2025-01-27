@@ -264,7 +264,7 @@ struct server_info parse_data(const char* raw, unsigned int data_size)
                     if(strcmp(description->string, "text") == 0)
                     {
                         unsigned int len = strlen(description->valuestring);
-                        description_str = realloc(description_str, description_len + len);
+                        description_str = realloc(description_str, description_len + len + 1);
                         strcpy(description_str + description_len, description->valuestring);
                         description_len += len;
                     }
