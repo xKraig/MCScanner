@@ -7,11 +7,12 @@
 #include <string.h>
 #include <arpa/inet.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 #include "network.h"
 
 
-unsigned int recv_data(int fd, void* buffer, unsigned int buffer_size)
+unsigned int recv_data(int fd, uint8_t* buffer, unsigned int buffer_size)
 {
 
     memset(buffer, 0, buffer_size);
@@ -21,7 +22,7 @@ unsigned int recv_data(int fd, void* buffer, unsigned int buffer_size)
 
     while( bytes_received < buffer_size )
     {
-        if (poll(&poll_info, 1, 500) == -1)
+        if (poll(&poll_info, 1, 2000) == -1)
         {
             printf("poll() failed! Error: %i\n", errno);
             printf("%s\n", strerror(errno));
@@ -41,7 +42,14 @@ unsigned int recv_data(int fd, void* buffer, unsigned int buffer_size)
         else return bytes_received;
     }
 
-    printf("Buffer overflow!\n");
+    char tmp[10000] = {0};
+    for(int i = 0; i < buffer_size && i < 10000; i++)
+    {
+        sprintf(tmp, "%c",buffer[i]);
+    }
+    if(strlen(tmp) > 0)
+        printf("Buffer overflow! Data: [%s]\n", tmp);
+
     return bytes_received;
 }
 
@@ -80,7 +88,7 @@ int connect_to(uint32_t ip, unsigned short port)
         return -1;
     }
 
-    struct timeval connect_time = { .tv_sec = 0, .tv_usec = 500*1000}; //500ms
+    struct timeval connect_time = { .tv_sec = 2, .tv_usec = 000*1000}; //1000ms
     struct timeval send_time = { .tv_sec = 2, .tv_usec = 0}; //2s
     struct timeval recv_time = { .tv_sec = 2, .tv_usec = 0}; //2s
 
@@ -95,9 +103,33 @@ int connect_to(uint32_t ip, unsigned short port)
 
     if(connect(s, (struct sockaddr*)&addr, sizeof(addr)) == -1)
     {
+        if(errno == EHOSTUNREACH || errno == ENETUNREACH)
+        {
+            for(int i = 0; i < 10; i++)
+            {
+                usleep(5000);
+                int res = connect(s, (struct sockaddr*)&addr, sizeof(addr));
+
+                if(res != EHOSTUNREACH || res != ENETUNREACH)
+                {
+                    close(s);
+                    return -1;
+                }
+            }
+            
+        }
+
+        if(errno == EINPROGRESS || errno == ECONNREFUSED)
+        {
+            close(s);
+            return -1;
+        }
+
+        printf("connect() failed with unhandled error! Error: %i\n", errno);
+        printf("%s\n", strerror(errno));
+        close(s);
         return -1;
     }
-    printf("Connect success!\n");
     return s;
 }
 
@@ -112,20 +144,41 @@ uint32_t ip_range_size(const char* begin, const char* end)
     uint32_t ip = ntohl(addr_begin.s_addr);
     uint32_t ip_end = ntohl(addr_end.s_addr);
 
-    return ip_end - ip;
+    return ip_end - ip + 1;
 }
 
-char* get_next_ip(const char* ip)
+uint8_t get_ip_by_offset(const char* src, char* dst, long int offset)
 {
+
     struct in_addr addr = {0};
 
-    inet_pton(AF_INET, ip, &addr);
+    if( inet_pton(AF_INET, src, &addr) != 1)
+    {
+        printf("inet_pton failed! %i\n", errno);
+        printf("%s\n", strerror(errno));
+        return -1;
+    }
 
-    uint32_t ip_number = ntohl(addr.s_addr);
-    ip_number++;
+    addr.s_addr = htonl(ntohl(addr.s_addr) + offset);
 
-    char* new_ip = calloc(16,1);
-    inet_ntop(AF_INET, &addr, new_ip, 16);
+    if( inet_ntop(AF_INET, &addr, dst, INET_ADDRSTRLEN) == NULL)
+    {
+        printf("inet_ntop failed! %i\n", errno);
+        printf("%s\n", strerror(errno));
+        return -1;
+    }
 
-    return new_ip;
+    return 0;
+}
+
+uint32_t ip_to_hostbytes(const char* ip)
+{
+    struct in_addr tmp;
+    return ntohl(inet_addr(ip));
+}
+
+char* hostbytes_to_ip(uint32_t hostbytes, char* dst, unsigned int buffer_size)
+{
+    struct in_addr addr = {.s_addr = htonl(hostbytes)};
+    return (char*)inet_ntop(AF_INET, &addr, dst, buffer_size);
 }

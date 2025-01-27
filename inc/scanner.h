@@ -3,9 +3,12 @@
 
 #include <sys/time.h>
 #include <stdint.h>
+#include <pthread.h>
 
 struct server_info
 {
+    char* ip;
+
     struct version
     {
         char* name;
@@ -23,7 +26,7 @@ struct server_info
 
 struct worker_info
 {
-    int id;
+    pthread_t id;
 
     struct
     {
@@ -34,7 +37,7 @@ struct worker_info
     struct
     {
         char* begin;
-        char* end;
+        uint32_t amount;
     } ip_range;
 
     struct
@@ -50,11 +53,15 @@ struct worker_info
     {
         uint8_t stop_requested;
         uint8_t running;
+        int log_file;
     } control;
 };
 
 
 void free_server_info(struct server_info info);
-const char * format_server_info(struct server_info);
-
+void log_server_info(int fd, struct server_info info);
+struct worker_info* start_worker(const char* ip_begin, long int amount);
+void stop_worker(struct worker_info* info);
+void free_worker_info(struct worker_info* info);
+struct server_info parse_data(const char* raw, unsigned int data_size);
 #endif
