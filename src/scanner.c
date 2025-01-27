@@ -33,8 +33,8 @@ void *scan_worker(void* info_arg)
         info->stats.nscanned++;
         const unsigned short port = 25565;
 
-        char tmp[17] = {0};
-        hostbytes_to_ip(current_ip, tmp, 16);
+        char tmp[INET_ADDRSTRLEN] = {0};
+        hostbytes_to_ip(current_ip, tmp, INET_ADDRSTRLEN);
 
         //printf("[%lX]connecting to %s\n", info->id, tmp);
         int s = connect_to(current_ip, port);
@@ -148,8 +148,8 @@ void free_server_info(struct server_info info)
 
 void log_server_info(int fd, struct server_info info)
 {
-    char buffer[100000] = {0};
-    sprintf(buffer,"[%s][%s] %s [%i/%i]\n", info.ip, info.version.name,info.description, info.players.online, info.players.max);
+    char buffer[200000] = {0};
+    snprintf(buffer,200000,"[%s][%s] %s [%i/%i]\n", info.ip, info.version.name,info.description, info.players.online, info.players.max);
 
     printf("%s",buffer);
     write(fd, buffer, strlen(buffer));
@@ -184,7 +184,7 @@ struct server_info parse_data(const char* raw, unsigned int data_size)
     {
 
         char tmp[10000] = {0};
-        for(int i = 0; i < data_size && i < 10000; i++)
+        for(int i = 0; i < data_size && i < 9999; i++)
         {
             sprintf(tmp, "%c",raw[i]);
         }
@@ -280,7 +280,7 @@ struct server_info parse_data(const char* raw, unsigned int data_size)
                                 if(strcmp(member->string, "text") == 0)
                                 {
                                     unsigned int len = strlen(member->valuestring);
-                                    description_str = realloc(description_str, description_len + len);
+                                    description_str = realloc(description_str, description_len + len + 1);
                                     strcpy(description_str + description_len, member->valuestring);
                                     description_len += len;
                                 }
