@@ -64,8 +64,8 @@ int main()
             printf("\n\n\n"
                     "Scanned:      %10u/%10u (%10f%%  ) %.2f/s\n"
                     "Connected:    %10u/%10u (%10.2f%%)\n"
-                    "Hits:         %10u/%10u (%10.2f%%)\n",
-                    "Runtime:      %10u"
+                    "Hits:         %10u/%10u (%10.2f%%)\n"
+                    "Runtime:      %10u\n"
                     ,total_scanned, range_size, ((float)total_scanned)*100.f/range_size, ((float)total_scanned)/(time(NULL)-begin)
                     ,total_connects, total_scanned, ((float)total_connects)*100.f/total_scanned
                     ,total_hits, total_connects, total_connects?((float)total_hits)*100.f/total_connects:0,
