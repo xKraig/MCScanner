@@ -65,22 +65,23 @@ void *scan_worker(void* info_arg)
 
         unsigned int data_size = recv_data(s, info->buffer.buffer, info->buffer.size);
 
-        struct server_info server = parse_data(info->buffer.buffer, data_size);
-
-
-        if(server.description != NULL)
+        if(data_size)
         {
-            info->stats.nhits++;
+            struct server_info server = parse_data(info->buffer.buffer, data_size);
+            if(server.description != NULL)
+            {
+                info->stats.nhits++;
 
-            server.ip = calloc(INET_ADDRSTRLEN, 1);
-            hostbytes_to_ip(current_ip, server.ip, INET_ADDRSTRLEN);
+                server.ip = calloc(INET_ADDRSTRLEN, 1);
+                hostbytes_to_ip(current_ip, server.ip, INET_ADDRSTRLEN);
 
-            log_server_info(info->control.log_file, server);
+                log_server_info(info->control.log_file, server);
+            }
+            free_server_info(server);
         }
 
         current_ip++;
         close(s);
-        free_server_info(server);
     }
 
     info->stats.time_end = time(NULL);
@@ -121,7 +122,7 @@ struct worker_info* start_worker(const char* ip_begin, long int amount)
     info->buffer.size = buffer_size;
     info->control.log_file = file;
 
-    printf("Starting worker with address %s\n", info->ip_range.begin);
+    //printf("Starting worker with address %s\n", info->ip_range.begin);
 
     pthread_create(&info->id, NULL, scan_worker, info);
 
@@ -194,7 +195,7 @@ struct server_info parse_data(const char* raw, unsigned int data_size)
         return info;
     }
   
-
+    cJSON* parrent = json;
     json = json->child;
 
     while(json)
@@ -308,6 +309,6 @@ struct server_info parse_data(const char* raw, unsigned int data_size)
         json = json->next;
     }
 
-    cJSON_Delete(json);
+    cJSON_Delete(parrent);
     return info;
 }

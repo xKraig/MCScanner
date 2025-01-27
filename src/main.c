@@ -65,7 +65,7 @@ int main()
                     "Scanned:      %10u/%10u (%10f%%  ) %.2f/s\n"
                     "Connected:    %10u/%10u (%10.2f%%)\n"
                     "Hits:         %10u/%10u (%10.2f%%)\n"
-                    "Runtime:      %10u\n"
+                    "Runtime:      %10us\n"
                     ,total_scanned, range_size, ((float)total_scanned)*100.f/range_size, ((float)total_scanned)/(time(NULL)-begin)
                     ,total_connects, total_scanned, ((float)total_connects)*100.f/total_scanned
                     ,total_hits, total_connects, total_connects?((float)total_hits)*100.f/total_connects:0,
@@ -83,8 +83,8 @@ int main()
         pthread_join(worker_list[i]->id, NULL);
         free_worker_info(worker_list[i]);
     }
-
     free(worker_list);
+
     printf("\n\nFinished!\n");
 }
 
