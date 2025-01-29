@@ -43,7 +43,7 @@ unsigned int recv_data(int fd, uint8_t* buffer, unsigned int buffer_size)
     }
 
     char tmp[10000] = {0};
-    for(int i = 0; i < buffer_size && i < 10000; i++)
+    for(int i = 0; i < buffer_size && i < 9999; i++)
     {
         sprintf(tmp, "%c",buffer[i]);
     }
